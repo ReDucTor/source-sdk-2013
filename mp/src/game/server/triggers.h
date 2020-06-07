@@ -213,6 +213,10 @@ public:
 	{
 		// This field came along after levels were built so the field defaults to 20 here in the constructor.
 		m_flDamageCap = 20.0f;
+#ifdef MAPBASE
+		// Uh, same here.
+		m_flHurtRate = 0.5f;
+#endif
 	}
 
 	DECLARE_CLASS( CTriggerHurt, CTriggerHurtShim );

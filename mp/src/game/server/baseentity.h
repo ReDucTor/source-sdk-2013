@@ -1228,6 +1228,9 @@ public:
 
 	virtual void	ModifyOrAppendCriteria( AI_CriteriaSet& set );
 	void			AppendContextToCriteria( AI_CriteriaSet& set, const char *prefix = "" );
+#ifdef MAPBASE
+	void			ReAppendContextCriteria( AI_CriteriaSet& set );
+#endif
 	void			DumpResponseCriteria( void );
 
 	// Return the IHasAttributes interface for this base entity. Removes the need for:

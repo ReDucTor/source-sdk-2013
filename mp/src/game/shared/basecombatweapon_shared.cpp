@@ -1657,6 +1657,11 @@ bool CBaseCombatWeapon::Holster( CBaseCombatWeapon *pSwitchingTo )
 			RescindReloadHudHint();
 	}
 
+#ifdef MAPBASE
+	if (HasSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY))
+		RemoveSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY);
+#endif
+
 	// reset pose parameters
 	PoseParameterOverride( true );
 
@@ -1965,6 +1970,14 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	// Secondary attack has priority
 	if ((pOwner->m_nButtons & IN_ATTACK2) && CanPerformSecondaryAttack() )
 	{
+#ifdef MAPBASE
+		if (pOwner->HasSpawnFlags(SF_PLAYER_SUPPRESS_FIRING))
+		{
+			// Don't do anything, just cancel the whole function
+			return;
+		}
+		else
+#endif
 		if (UsesSecondaryAmmo() && pOwner->GetAmmoCount(m_iSecondaryAmmoType)<=0 )
 		{
 			if (m_flNextEmptySoundTime < gpGlobals->curtime)
@@ -3182,5 +3195,10 @@ BEGIN_NETWORK_TABLE(CBaseCombatWeapon, DT_BaseCombatWeapon)
 	RecvPropInt( RECVINFO(m_iWorldModelIndex)),
 	RecvPropInt( RECVINFO(m_iState), 0, &CBaseCombatWeapon::RecvProxy_WeaponState ),
 	RecvPropEHandle( RECVINFO(m_hOwner ) ),
+
+#ifdef MAPBASE
+	RecvPropInt( RECVINFO( m_spawnflags ) ),
+#endif
+
 #endif
 END_NETWORK_TABLE()

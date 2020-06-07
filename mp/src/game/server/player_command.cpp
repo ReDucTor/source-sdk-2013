@@ -453,7 +453,11 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		VPROF( "pVehicle->ProcessMovement()" );
 		pVehicle->ProcessMovement( player, g_pMoveData );
 	}
-			
+
+#ifdef PLAYER_COMMAND_FIX
+	RunPostThink( player );
+#endif
+
 	// Copy output
 	FinishMove( player, ucmd, g_pMoveData );
 
@@ -463,12 +467,14 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		player->pl.v_angle = player->GetLockViewanglesData();
 	}
 
+#ifndef PLAYER_COMMAND_FIX
 	// Let server invoke any needed impact functions
 	VPROF_SCOPE_BEGIN( "moveHelper->ProcessImpacts" );
 	moveHelper->ProcessImpacts();
 	VPROF_SCOPE_END();
 
 	RunPostThink( player );
+#endif
 
 	g_pGameMovement->FinishTrackPredictionErrors( player );
 

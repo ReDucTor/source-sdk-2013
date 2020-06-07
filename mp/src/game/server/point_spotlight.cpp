@@ -126,6 +126,16 @@ CPointSpotlight::CPointSpotlight()
 	m_bIgnoreSolid = false;
 }
 
+#ifdef MAPBASE
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CPointSpotlight::~CPointSpotlight()
+{
+	SpotlightDestroy();
+}
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 

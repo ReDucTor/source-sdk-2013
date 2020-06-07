@@ -336,6 +336,10 @@ public:
 	virtual bool			Reload( void );
 	bool					DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
 	bool					ReloadsSingly( void ) const;
+#ifdef MAPBASE
+	// Originally created for the crossbow, can be used to add special NPC reloading behavior
+	virtual void			Reload_NPC( void ) { WeaponSound(RELOAD_NPC); m_iClip1 = GetMaxClip1(); }
+#endif
 
 	virtual bool			AutoFiresFullClip( void ) const { return false; }
 	virtual void			UpdateAutoFire( void );

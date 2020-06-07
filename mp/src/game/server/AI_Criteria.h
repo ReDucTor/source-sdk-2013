@@ -221,7 +221,12 @@ public:
 	void			SetContext( const char *context );
 	const char *	GetContext( void ) const { return m_szContext.Length() ? m_szContext.Get() : NULL; }
 
+#ifdef MAPBASE
+	int				GetContextFlags() { return m_iContextFlags; }
+	bool			IsApplyContextToWorld( void ) { return (m_iContextFlags & APPLYCONTEXT_WORLD) != 0; }
+#else
 	bool			IsApplyContextToWorld( void ) { return m_bApplyContextToWorld; }
+#endif
 
 	void Describe();
 
@@ -265,7 +270,11 @@ private:
 	AI_ResponseParams m_Params;
 
 	CUtlString		m_szContext;
+#ifdef MAPBASE
+	int				m_iContextFlags;
+#else
 	bool			m_bApplyContextToWorld;
+#endif
 };
 
 #endif // AI_CRITERIA_H

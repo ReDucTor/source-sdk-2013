@@ -692,6 +692,9 @@ struct FireBulletsInfo_t
 #endif
 		m_bPrimaryAttack = true;
 		m_bUseServerRandomSeed = false;
+#ifdef MAPBASE
+		m_pIgnoreEntList = NULL;
+#endif
 	}
 
 	FireBulletsInfo_t( int nShots, const Vector &vecSrc, const Vector &vecDir, const Vector &vecSpread, float flDistance, int nAmmoType, bool bPrimaryAttack = true )
@@ -711,6 +714,9 @@ struct FireBulletsInfo_t
 		m_flDamageForceScale = 1.0f;
 		m_bPrimaryAttack = bPrimaryAttack;
 		m_bUseServerRandomSeed = false;
+#ifdef MAPBASE
+		m_pIgnoreEntList = NULL;
+#endif
 	}
 
 	int m_iShots;
@@ -728,6 +734,14 @@ struct FireBulletsInfo_t
 	CBaseEntity *m_pAdditionalIgnoreEnt;
 	bool m_bPrimaryAttack;
 	bool m_bUseServerRandomSeed;
+#ifdef MAPBASE
+	// This variable is like m_pAdditionalIgnoreEnt, but it's a list of entities instead of just one.
+	// Since func_tanks already use m_pAdditionalIgnoreEnt for parents, they needed another way to stop hitting their controllers.
+	// After much trial and error, I decided to just add more excluded entities to the bullet firing info.
+	// It could've just been a single entity called "m_pAdditionalIgnoreEnt2", but since these are just pointers,
+	// I planned ahead and made it a CUtlVector instead.
+	CUtlVector<CBaseEntity*> *m_pIgnoreEntList;
+#endif
 };
 
 //-----------------------------------------------------------------------------

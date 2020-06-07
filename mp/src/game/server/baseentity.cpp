@@ -1503,16 +1503,26 @@ int CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 		}
 	}
 
+#ifndef MAPBASE // Moved below the gamerules AllowDamage() check
 	// Make sure our damage filter allows the damage.
 	if ( !PassesDamageFilter( inputInfo ))
 	{
 		return 0;
 	}
+#endif
 
 	if( !g_pGameRules->AllowDamage(this, inputInfo) )
 	{
 		return 0;
 	}
+
+#ifdef MAPBASE 
+	// Make sure our damage filter allows the damage.
+	if ( !PassesDamageFilter( inputInfo ))
+	{
+		return 0;
+	}
+#endif
 
 	if ( PhysIsInCallback() )
 	{
@@ -1532,6 +1542,11 @@ int CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 		info.ScaleDamage( GetReceivedDamageScale( info.GetAttacker() ) );
 
 		//Msg("%s took %.2f Damage, at %.2f\n", GetClassname(), info.GetDamage(), gpGlobals->curtime );
+
+#ifdef MAPBASE
+		// Modify damage if we have a filter that does that
+		DamageFilterDamageMod(info);
+#endif
 
 		return OnTakeDamage( info );
 	}
@@ -5065,7 +5080,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 						{
 							char token[256];
 							const char *pOptions = pEvent->pszOptions();
-							nexttoken( token, pOptions, ' ' );
+							nexttoken( token, pOptions, ' ', sizeof( token ) );
 							if ( token[0] ) 
 							{
 								PrecacheParticleSystem( token );
@@ -5222,11 +5237,6 @@ void ConsoleFireTargets( CBasePlayer *pPlayer, const char *name)
 }
 
 #ifdef MAPBASE
-inline bool UtlStringLessFunc( const CUtlString &lhs, const CUtlString &rhs )
-{
-	return Q_stricmp( lhs.String(), rhs.String() ) < 0;
-}
-
 //------------------------------------------------------------------------------
 // Purpose : More concommands needed access to entities, so this has been moved to its own function.
 // Input   : cmdname - The name of the command.
@@ -8038,7 +8048,40 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 		return;
 
 	// Handle the response here...
+#ifdef MAPBASE
+	char szResponse[ 256 ];
+	Q_strncpy(szResponse, result.GetResponsePtr(), sizeof(szResponse));
+	if (szResponse[0] == '$')
+	{
+		const char *context = szResponse + 1;
+		const char *replace = GetContextValue(context);
+
+		if (replace)
+		{
+			DevMsg("Replacing %s with %s...\n", szResponse, replace);
+			Q_strncpy(szResponse, replace, sizeof(szResponse));
+
+			// Precache it now because it may not have been precached before
+			switch ( result.GetType() )
+			{
+			case RESPONSE_SPEAK:
+				{
+					PrecacheScriptSound( szResponse );
+				}
+				break;
+
+			case RESPONSE_SCENE:
+				{
+					// TODO: Gender handling?
+					PrecacheInstancedScene( szResponse );
+				}
+				break;
+			}
+		}
+	}
+#else
 	const char *szResponse = result.GetResponsePtr();
+#endif
 	switch ( result.GetType() )
 	{
 	case RESPONSE_SPEAK:
@@ -8047,6 +8090,13 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 
 	case RESPONSE_SENTENCE:
 		{
+#ifdef MAPBASE
+			if (szResponse[0] != '!')
+			{
+				SENTENCEG_PlayRndSz( edict(), szResponse, 1, result.GetSoundLevel(), 0, PITCH_NORM );
+				break;
+			}
+#endif
 			int sentenceIndex = SENTENCEG_Lookup( szResponse );
 			if( sentenceIndex == -1 )
 			{
@@ -8061,8 +8111,31 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 		break;
 
 	case RESPONSE_SCENE:
-		// Try to fire scene w/o an actor
-		InstancedScriptedScene( NULL, szResponse );
+		{
+#ifdef MAPBASE
+			// Most flexing actors that use scenes override DispatchResponse via CAI_Expresser in ai_speech.
+			// So, in order for non-actors to use scenes by themselves, they actually don't really use them at all.
+			// Most scenes that would be used as responses only have one sound, so we take the first sound in a scene and emit it manually.
+			// 
+			// Of course, env_speaker uses scenes without using itself as an actor, but that overrides DispatchResponse in Mapbase
+			// with the original code intact. Hopefully no other entity uses this like that...
+
+			//if (!ClassMatches("env_speaker"))
+			{
+				// Expand gender string
+				GenderExpandString( szResponse, szResponse, sizeof( szResponse ) );
+
+				// Trust that it's been precached
+				const char *pszSound = GetFirstSoundInScene(szResponse);
+				EmitSound(pszSound);
+			}
+			//else
+			//	InstancedScriptedScene(NULL, response);
+#else
+			// Try to fire scene w/o an actor
+			InstancedScriptedScene( NULL, szResponse );
+#endif
+		}
 		break;
 
 	case RESPONSE_PRINT:

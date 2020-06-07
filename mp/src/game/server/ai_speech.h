@@ -157,10 +157,19 @@ public:
 	// --------------------------------
 	
 	bool Speak( AIConcept_t concept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+#ifdef MAPBASE
+	bool Speak( AIConcept_t concept, AI_CriteriaSet& modifiers, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+	bool SpeakFindResponse( AI_Response &outResponse, AIConcept_t concept, AI_CriteriaSet& modifiers );
+	void MergeModifiers( AI_CriteriaSet& set, const char *modifiers );
+#endif
 
 	// These two methods allow looking up a response and dispatching it to be two different steps
 	bool SpeakFindResponse( AI_Response &response, AIConcept_t concept, const char *modifiers = NULL );
+#ifdef MAPBASE
+	bool SpeakDispatchResponse( AIConcept_t concept, AI_Response &response, IRecipientFilter *filter = NULL, AI_CriteriaSet *modifiers = NULL );
+#else
 	bool SpeakDispatchResponse( AIConcept_t concept, AI_Response &response, IRecipientFilter *filter = NULL );
+#endif
 	float GetResponseDuration( AI_Response &response );
 
 	virtual int SpeakRawSentence( const char *pszSentence, float delay, float volume = VOL_NORM, soundlevel_t soundlevel = SNDLVL_TALKING, CBaseEntity *pListener = NULL );
@@ -290,9 +299,15 @@ public:
 	virtual void	NoteSpeaking( float duration, float delay );
 
 	virtual bool 	Speak( AIConcept_t concept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+#ifdef MAPBASE
+	virtual bool 	Speak( AIConcept_t concept, AI_CriteriaSet& modifiers, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+#endif
 
 	// These two methods allow looking up a response and dispatching it to be two different steps
 	bool			SpeakFindResponse( AI_Response& response, AIConcept_t concept, const char *modifiers = NULL );
+#ifdef MAPBASE
+	bool			SpeakFindResponse( AI_Response& response, AIConcept_t concept, AI_CriteriaSet& modifiers );
+#endif
 	bool 			SpeakDispatchResponse( AIConcept_t concept, AI_Response& response );
 	virtual void	PostSpeakDispatchResponse( AIConcept_t concept, AI_Response& response ) { return; }
 	float 			GetResponseDuration( AI_Response& response );
@@ -385,6 +400,16 @@ inline bool CAI_ExpresserHost<BASE_NPC>::SpeakFindResponse( AI_Response& respons
 {
 	return this->GetExpresser()->SpeakFindResponse( response, concept, modifiers );
 }
+
+#ifdef MAPBASE
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+template <class BASE_NPC>
+inline bool CAI_ExpresserHost<BASE_NPC>::SpeakFindResponse( AI_Response& response, AIConcept_t concept, AI_CriteriaSet& modifiers )
+{
+	return this->GetExpresser()->SpeakFindResponse( response, concept, modifiers );
+}
+#endif
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

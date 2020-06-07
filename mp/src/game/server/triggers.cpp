@@ -910,6 +910,24 @@ void CTriggerHurt::Touch( CBaseEntity *pOther )
 	}
 }
 
+#ifdef MAPBASE
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CTriggerHurt::KeyValue( const char *szKeyName, const char *szValue )
+{
+	// Additional OR flags
+	if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
+	{
+		m_bitsDamageInflict |= atoi(szValue);
+	}
+	else
+		return BaseClass::KeyValue( szKeyName, szValue );
+
+	return true;
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Checks if this point is in any trigger_hurt zones with positive damage
 //-----------------------------------------------------------------------------

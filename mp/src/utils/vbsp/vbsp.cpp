@@ -1176,6 +1176,15 @@ int RunVBSP( int argc, char **argv )
 			g_pFullFileSystem->AddSearchPath( g_szEmbedDir, "GAME", PATH_ADD_TO_TAIL );
 			g_pFullFileSystem->AddSearchPath( g_szEmbedDir, "MOD", PATH_ADD_TO_TAIL );
 		}
+#ifdef MAPBASE
+		// Thanks to Mapbase's shader changes, default cubemaps are no longer needed.
+		// The command has been switched from "-nodefaultcubemap" to "-defaultcubemap",
+		// meaning maps are compiled without them by default.
+		else if ( !Q_stricmp( argv[i], "-defaultcubemap" ) )
+		{
+			g_bNoDefaultCubemaps = false;
+		}
+#endif
 		else if (argv[i][0] == '-')
 		{
 			Warning("VBSP: Unknown option \"%s\"\n\n", argv[i]);

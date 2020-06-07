@@ -419,6 +419,9 @@ public:
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
 	void					Weapon_DropSlot( int weaponSlot );
 	CBaseCombatWeapon		*GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
+#ifdef MAPBASE
+	virtual Activity		Weapon_TranslateActivity( Activity baseAct, bool *pRequired = NULL );
+#endif
 
 	virtual void			OnMyWeaponFired( CBaseCombatWeapon *weapon );	// call this when this player fires a weapon to allow other systems to react
 	virtual float			GetTimeSinceWeaponFired( void ) const;			// returns the time, in seconds, since this player fired a weapon
@@ -905,6 +908,10 @@ public:
 	CEconWearable			*GetWearable( int i ) { return m_hMyWearables[i]; }
 	const CEconWearable		*GetWearable( int i ) const { return m_hMyWearables[i]; }
 	int						GetNumWearables( void ) const { return m_hMyWearables.Count(); }
+#endif
+
+#ifdef MAPBASE
+	bool					m_bInTriggerFall;
 #endif
 
 private:

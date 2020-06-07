@@ -274,6 +274,15 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 
 	float flTintReplacementAmount = GetFloatParam( info.m_nTintReplacesBaseColor, params );
 
+#ifdef MAPBASE
+	// This option was ported from Alien Swarm for Source 2013's "skin shader" implementation.
+	// Original comment from Alien Swarm SDK:
+	//   "This is to allow phong materials to disable half lambert. Half lambert has always been forced on in phong,
+	//   so the only safe way to allow artists to disable half lambert is to create this param that disables the
+	//   default behavior of forcing half lambert on."
+	bool bPhongHalfLambert = IS_PARAM_DEFINED( info.m_nPhongDisableHalfLambert ) ? (params[info.m_nPhongDisableHalfLambert]->GetIntValue() == 0) : true;
+#endif
+
 	float flPhongExponentFactor =  ( info.m_nPhongExponentFactor != -1 ) ? GetFloatParam( info.m_nPhongExponentFactor, params ) : 0.0f;
 	const bool bHasPhongExponentFactor = flPhongExponentFactor != 0.0f;
 
@@ -673,61 +682,78 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		}
 
 #ifndef _X360
-		if ( !g_pHardwareConfig->HasFastVertexTextures() )
+		if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
 #endif
 		{
 			bool bUseStaticControlFlow = g_pHardwareConfig->SupportsStaticControlFlow();
 
-			DECLARE_DYNAMIC_VERTEX_SHADER( skin_vs20 );
+			DECLARE_DYNAMIC_VERTEX_SHADER( sdk_skin_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( DOWATERFOG, fogIndex );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, numBones > 0 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( LIGHTING_PREVIEW, pShaderAPI->GetIntRenderingParameter(INT_RENDERPARM_ENABLE_FIXED_LIGHTING)!=0);
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( NUM_LIGHTS, bUseStaticControlFlow ? 0 : lightState.m_nNumLights );
-			SET_DYNAMIC_VERTEX_SHADER( skin_vs20 );
+			SET_DYNAMIC_VERTEX_SHADER( sdk_skin_vs20 );
 
-			DECLARE_DYNAMIC_PIXEL_SHADER( skin_ps20b );
+			DECLARE_DYNAMIC_PIXEL_SHADER( sdk_skin_ps20b );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( NUM_LIGHTS, lightState.m_nNumLights );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITEWATERFOGTODESTALPHA, bWriteWaterFogToAlpha );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bWriteDepthToAlpha );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( FLASHLIGHTSHADOWS, bFlashlightShadows );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( PHONG_USE_EXPONENT_FACTOR, bHasPhongExponentFactor );
-			SET_DYNAMIC_PIXEL_SHADER( skin_ps20b );
+			SET_DYNAMIC_PIXEL_SHADER( sdk_skin_ps20b );
 		}
 #ifndef _X360
 		else
 		{
-			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, SHADER_VERTEXTEXTURE_SAMPLER0 );
+			const bool bFastVertexTextures = g_pHardwareConfig->HasFastVertexTextures();
 
-			DECLARE_DYNAMIC_VERTEX_SHADER( skin_vs30 );
+			if ( bFastVertexTextures )
+				pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, SHADER_VERTEXTEXTURE_SAMPLER0 );
+
+			DECLARE_DYNAMIC_VERTEX_SHADER( sdk_skin_vs30 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( DOWATERFOG, fogIndex );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, numBones > 0 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( LIGHTING_PREVIEW, pShaderAPI->GetIntRenderingParameter(INT_RENDERPARM_ENABLE_FIXED_LIGHTING)!=0);
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( MORPHING, pShaderAPI->IsHWMorphingEnabled() );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
-			SET_DYNAMIC_VERTEX_SHADER( skin_vs30 );
+			SET_DYNAMIC_VERTEX_SHADER( sdk_skin_vs30 );
 
-			DECLARE_DYNAMIC_PIXEL_SHADER( skin_ps30 );
+			DECLARE_DYNAMIC_PIXEL_SHADER( sdk_skin_ps30 );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( NUM_LIGHTS,  lightState.m_nNumLights );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITEWATERFOGTODESTALPHA, bWriteWaterFogToAlpha );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bWriteDepthToAlpha );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( FLASHLIGHTSHADOWS, bFlashlightShadows );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( PHONG_USE_EXPONENT_FACTOR, bHasPhongExponentFactor );
-			SET_DYNAMIC_PIXEL_SHADER( skin_ps30 );
+			SET_DYNAMIC_PIXEL_SHADER( sdk_skin_ps30 );
 
-			bool bUnusedTexCoords[3] = { false, false, !pShaderAPI->IsHWMorphingEnabled() || !bIsDecal };
-			pShaderAPI->MarkUnusedVertexFields( 0, 3, bUnusedTexCoords );
+			if ( bFastVertexTextures )
+			{
+				bool bUnusedTexCoords[3] = { false, false, !pShaderAPI->IsHWMorphingEnabled() || !bIsDecal };
+				pShaderAPI->MarkUnusedVertexFields( 0, 3, bUnusedTexCoords );
+			}
 		}
 #endif
 
 		pShader->SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, info.m_nBaseTextureTransform );
 
+#ifdef MAPBASE
+		// The original code makes it seem like we have the opportunity to support both $bumptransform and $detail at the same time,
+		// and that may or may not have been Valve's intention, but we'd need to add another texcoord for this and it's already
+		// a limitation with the non-skin shader anyway.
+		if ( bHasBump )
+		{
+			pShader->SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4, info.m_nBumpTransform );
+		}
+		else
+#else
 		if( bHasBump )
 		{
 			pShader->SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_2, info.m_nBumpTransform );
 		}
+#endif
 
 		if ( hasDetailTexture )
 		{
