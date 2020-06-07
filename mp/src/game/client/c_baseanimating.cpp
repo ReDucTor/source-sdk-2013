@@ -3773,7 +3773,7 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 
 			// Get the particle effect name
 			const char *p = options;
-			p = nexttoken(token, p, ' ', sizeof(token), sizeof(token));
+			p = nexttoken(token, p, ' ', sizeof(token));
 
 			const char* mtoken = ModifyEventParticles( token );
 			if ( !mtoken || mtoken[0] == '\0' )

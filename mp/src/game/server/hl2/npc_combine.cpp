@@ -706,7 +706,7 @@ Class_T	CNPC_Combine::Classify ( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-inline bool CNPC_Combine::IsElite( void )
+bool CNPC_Combine::IsElite( void )
 {
 	return m_fIsElite;
 }

@@ -3924,7 +3924,7 @@ bool CBaseCombatCharacter::IsGlowEffectActive( void )
 //-----------------------------------------------------------------------------
 // Mapbase adds proficiency override
 //-----------------------------------------------------------------------------
-inline WeaponProficiency_t CBaseCombatCharacter::GetCurrentWeaponProficiency()
+WeaponProficiency_t CBaseCombatCharacter::GetCurrentWeaponProficiency()
 {
 	return (m_ProficiencyOverride > WEAPON_PROFICIENCY_INVALID) ? m_ProficiencyOverride : m_CurrentWeaponProficiency;
 }

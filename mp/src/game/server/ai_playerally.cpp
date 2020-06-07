@@ -883,16 +883,16 @@ bool CAI_PlayerAlly::AskQuestionNow( CBaseEntity *pSpeechTarget, int iQARandomNu
 		m_iQARandomNumber = RandomInt(0, 100);
 
 	AISpeechSelection_t selection;
-	SelectSpeechResponse( concept, NULL, m_hPotentialSpeechTarget.Get(), &selection );
+	bool result = SelectSpeechResponse( concept, NULL, m_hPotentialSpeechTarget.Get(), &selection );
 
 	SetSpeechTarget( selection.hSpeechTarget );
 	ClearPendingSpeech();
 
-	if (!selection.pResponse)
+	if (!result)
 		return false;
 
 	// Speak immediately
-	return SpeakDispatchResponse( selection.concept.c_str(), selection.pResponse );
+	return SpeakDispatchResponse( selection.concept.c_str(), selection.Response);
 }
 
 //-----------------------------------------------------------------------------

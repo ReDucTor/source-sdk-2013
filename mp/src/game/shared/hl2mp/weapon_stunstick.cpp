@@ -29,7 +29,6 @@
 	#include "fx_quad.h"
 	#include "fx.h"
 
-	extern void DrawHalo( IMaterial* pMaterial, const Vector &source, float scale, float const *color, float flHDRColorScale = 1.0f );
 	extern void FormatViewModelAttachment( Vector &vOrigin, bool bInverse );
 
 #endif

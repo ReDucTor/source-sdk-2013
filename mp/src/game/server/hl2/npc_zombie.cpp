@@ -1210,17 +1210,18 @@ const char *CZombieCustom::GetMoanSound( int nSound )
 	// We could probably do this through the response system alone now, but whatever.
 	modifiers.AppendCriteria( "moansound", UTIL_VarArgs("%i", nSound & 4) );
 
-	AI_Response *response = SpeakFindResponse(TLK_ZOMBIE_MOAN, modifiers);
+	AI_Response response;
+	
+	bool result = SpeakFindResponse(response, TLK_ZOMBIE_MOAN, modifiers);
 
-	if ( !response )
+	if ( !result)
 		return "NPC_BaseZombie.Moan1";
 
 	// Must be static so it could be returned
 	static char szSound[128];
-	response->GetName(szSound, sizeof(szSound));
+	Q_strncpy(szSound, response.GetNamePtr(), sizeof(szSound));
 
-	delete response;
-	return szSound;
+	return response.GetNamePtr();
 }
 
 //-----------------------------------------------------------------------------

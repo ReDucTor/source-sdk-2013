@@ -234,7 +234,7 @@ void CSpeaker::DispatchResponse( const char *conceptName )
 
 	// Handle the response here...
 	char response[ 256 ];
-	result.GetResponse( response, sizeof( response ) );
+	Q_strncpy(response, result.GetResponsePtr(), sizeof(response) );
 	if (response[0] == '$')
 	{
 		response[0] = '\0';
