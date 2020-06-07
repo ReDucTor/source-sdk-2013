@@ -9,13 +9,13 @@
 #include "skin_dx9_helper.h"
 #include "convar.h"
 #include "cpp_shader_constant_register_map.h"
-#include "skin_vs20.inc"
-#include "skin_ps20b.inc"
+#include "SDK_skin_vs20.inc"
+#include "SDK_skin_ps20b.inc"
 #include "commandbuilder.h"
 
 #ifndef _X360
-#include "skin_vs30.inc"
-#include "skin_ps30.inc"
+#include "SDK_skin_vs30.inc"
+#include "SDK_skin_ps30.inc"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -115,6 +115,10 @@ void InitParamsSkin_DX9( CBaseVSShader *pShader, IMaterialVar** params, const ch
 	{
 		params[info.m_nEnvmapFresnel]->SetFloatValue( 0 );
 	}
+
+#ifdef MAPBASE
+	InitIntParam( info.m_nPhongDisableHalfLambert, params, 0 );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -447,17 +451,17 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 
 
 #ifndef _X360
-		if ( !g_pHardwareConfig->HasFastVertexTextures() )
+		if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
 #endif
 		{
 			bool bUseStaticControlFlow = g_pHardwareConfig->SupportsStaticControlFlow();
 
-			DECLARE_STATIC_VERTEX_SHADER( skin_vs20 );
+			DECLARE_STATIC_VERTEX_SHADER( sdk_skin_vs20 );
 			SET_STATIC_VERTEX_SHADER_COMBO( USE_STATIC_CONTROL_FLOW, bUseStaticControlFlow );
-			SET_STATIC_VERTEX_SHADER( skin_vs20 );
+			SET_STATIC_VERTEX_SHADER( sdk_skin_vs20 );
 
 			// Assume we're only going to get in here if we support 2b
-			DECLARE_STATIC_PIXEL_SHADER( skin_ps20b );
+			DECLARE_STATIC_PIXEL_SHADER( sdk_skin_ps20b );
 			SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT, bHasFlashlight );
 			SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM,  bHasSelfIllum && !bHasFlashlight );
 			SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUMFRESNEL,  bHasSelfIllumFresnel && !bHasFlashlight );
@@ -472,19 +476,25 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			SET_STATIC_PIXEL_SHADER_COMBO( CONVERT_TO_SRGB, 0 );
 			SET_STATIC_PIXEL_SHADER_COMBO( FASTPATH_NOBUMP, pContextData->m_bFastPath );
 			SET_STATIC_PIXEL_SHADER_COMBO( BLENDTINTBYBASEALPHA, bBlendTintByBaseAlpha );
-			SET_STATIC_PIXEL_SHADER( skin_ps20b );
+#ifdef MAPBASE
+			SET_STATIC_PIXEL_SHADER_COMBO( PHONG_HALFLAMBERT, bPhongHalfLambert );
+#endif
+			SET_STATIC_PIXEL_SHADER( sdk_skin_ps20b );
 		}
 #ifndef _X360
 		else
 		{
+			const bool bFastVertexTextures = g_pHardwareConfig->HasFastVertexTextures();
+
 			// The vertex shader uses the vertex id stream
-			SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
+			if ( bFastVertexTextures )
+				SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
 
-			DECLARE_STATIC_VERTEX_SHADER( skin_vs30 );
-			SET_STATIC_VERTEX_SHADER_COMBO( DECAL, bIsDecal );
-			SET_STATIC_VERTEX_SHADER( skin_vs30 );
+			DECLARE_STATIC_VERTEX_SHADER( sdk_skin_vs30 );
+			SET_STATIC_VERTEX_SHADER_COMBO( DECAL, bIsDecal && bFastVertexTextures );
+			SET_STATIC_VERTEX_SHADER( sdk_skin_vs30 );
 
-			DECLARE_STATIC_PIXEL_SHADER( skin_ps30 );
+			DECLARE_STATIC_PIXEL_SHADER( sdk_skin_ps30 );
 			SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT, bHasFlashlight );
 			SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM,  bHasSelfIllum && !bHasFlashlight );
 			SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUMFRESNEL,  bHasSelfIllumFresnel && !bHasFlashlight );
@@ -499,7 +509,10 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			SET_STATIC_PIXEL_SHADER_COMBO( CONVERT_TO_SRGB, 0 );
 			SET_STATIC_PIXEL_SHADER_COMBO( FASTPATH_NOBUMP, pContextData->m_bFastPath );
 			SET_STATIC_PIXEL_SHADER_COMBO( BLENDTINTBYBASEALPHA, bBlendTintByBaseAlpha );
-			SET_STATIC_PIXEL_SHADER( skin_ps30 );
+#ifdef MAPBASE
+			SET_STATIC_PIXEL_SHADER_COMBO( PHONG_HALFLAMBERT, bPhongHalfLambert );
+#endif
+			SET_STATIC_PIXEL_SHADER( sdk_skin_ps30 );
 		}
 #endif
 
@@ -736,7 +749,10 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		bool bHasBaseAlphaPhongMask = (info.m_nBaseMapAlphaPhongMask != -1) && ( params[info.m_nBaseMapAlphaPhongMask]->GetIntValue() != 0 );
 		float fHasBaseAlphaPhongMask = bHasBaseAlphaPhongMask ? 1 : 0;
 		// Controls for lerp-style paths through shader code
-		float vShaderControls[4] = { fHasBaseAlphaPhongMask, 0.0f/*unused*/, flTintReplacementAmount, fInvertPhongMask };
+		
+		const float flMinLighting = pShaderAPI->GetFloatRenderingParameter( FLOAT_RENDERPARM_MINIMUMLIGHTING );
+
+		float vShaderControls[4] = { fHasBaseAlphaPhongMask, flMinLighting, flTintReplacementAmount, fInvertPhongMask };
 		pShaderAPI->SetPixelShaderConstant( PSREG_CONSTANT_27, vShaderControls, 1 );
 
 		if ( hasDetailTexture )
@@ -969,22 +985,23 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 //-----------------------------------------------------------------------------
 // Draws the shader
 //-----------------------------------------------------------------------------
-extern ConVar r_flashlight_version2;
 void DrawSkin_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow,
 				   VertexLitGeneric_DX9_Vars_t &info, VertexCompressionType_t vertexCompression,
 				   CBasePerMaterialContextData **pContextDataPtr )
 
 {
+	//ConVarRef r_flashlight_version2 = ConVarRef( "r_flashlight_version2" );
+
 	bool bHasFlashlight = pShader->UsingFlashlight( params );
-	if ( bHasFlashlight && ( IsX360() || r_flashlight_version2.GetInt() ) )
-	{
-		DrawSkin_DX9_Internal( pShader, params, pShaderAPI,
-			pShaderShadow, false, info, vertexCompression, pContextDataPtr++ );
-		if ( pShaderShadow )
-		{
-			pShader->SetInitialShadowState( );
-		}
-	}
+	//if ( bHasFlashlight && ( IsX360() || r_flashlight_version2.GetBool() ) )
+	//{
+	//	DrawSkin_DX9_Internal( pShader, params, pShaderAPI,
+	//		pShaderShadow, false, info, vertexCompression, pContextDataPtr++ );
+	//	if ( pShaderShadow )
+	//	{
+	//		pShader->SetInitialShadowState( );
+	//	}
+	//}
 	DrawSkin_DX9_Internal( pShader, params, pShaderAPI,
 		pShaderShadow, bHasFlashlight, info, vertexCompression, pContextDataPtr );
 }

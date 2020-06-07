@@ -26,6 +26,9 @@ public:
 	DECLARE_DATADESC();
 
 	CPointSpotlight();
+#ifdef MAPBASE
+	~CPointSpotlight();
+#endif
 
 	void	Precache(void);
 	void	Spawn(void);

@@ -1021,6 +1021,11 @@ public:
 	virtual Vector			EyePosition( void );
 	virtual const QAngle&	EyeAngles( void );		// Direction of eyes
 	virtual const QAngle&	LocalEyeAngles( void );	// Direction of eyes in local space (pl.v_angle)
+
+#ifdef MAPBASE
+	// Created for script_intro and info_player_view_proxy
+	virtual void			GetEyePosition( Vector &vecOrigin, QAngle &angAngles ) { vecOrigin = EyePosition(); angAngles = EyeAngles(); }
+#endif
 	
 	// position of ears
 	virtual Vector		EarPosition( void );
@@ -1288,6 +1293,10 @@ public:
 	unsigned short					m_EntClientFlags;
 
 	CNetworkColor32( m_clrRender );
+
+#ifdef MAPBASE
+	int								m_iViewHideFlags;
+#endif
 
 private:
 	

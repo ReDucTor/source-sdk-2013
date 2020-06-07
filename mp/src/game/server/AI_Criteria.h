@@ -37,6 +37,10 @@ public:
 	const char *GetValue( int index ) const;
 	float		GetWeight( int index ) const;
 
+#ifdef MAPBASE
+	void		MergeSet( const AI_CriteriaSet& src );
+#endif
+
 private:
 
 	struct CritEntry_t
@@ -170,6 +174,24 @@ enum ResponseType_t
 	NUM_RESPONSES,
 };
 
+#ifdef MAPBASE
+// I wanted to add more options to apply contexts to,
+// so I replaced the existing system with a flag-based integer instead of a bunch of booleans.
+// 
+// New ones should be implemented in: 
+// CResponseSystem::ParseRule() - AI_ResponseSystem.cpp
+// AI_Response::Describe() - AI_Criteria.cpp
+// CAI_Expresser::SpeakDispatchResponse() - ai_speech.cpp
+enum
+{
+	APPLYCONTEXT_SELF = (1 << 0), // Included for contexts that apply to both self and something else
+	APPLYCONTEXT_WORLD = (1 << 1), // Apply to world
+
+	APPLYCONTEXT_SQUAD = (1 << 2), // Apply to squad
+	APPLYCONTEXT_ENEMY = (1 << 3), // Apply to enemy
+};
+#endif
+
 class AI_Response
 {
 public:
@@ -212,6 +234,16 @@ public:
 				const char *matchingRule,
 				const char *applyContext,
 				bool bApplyContextToWorld );
+
+#ifdef MAPBASE
+	void	Init( ResponseType_t type, 
+				const char *responseName, 
+				const AI_CriteriaSet& criteria, 
+				const AI_ResponseParams& responseparams,
+				const char *matchingRule,
+				const char *applyContext,
+				int iContextFlags );
+#endif
 
 	static const char *DescribeResponse( ResponseType_t type );
 

@@ -298,6 +298,11 @@ public:
 	void InputIgniteNumHitboxFires( inputdata_t &inputdata );
 	void InputIgniteHitboxFireScale( inputdata_t &inputdata );
 	void InputBecomeRagdoll( inputdata_t &inputdata );
+#ifdef MAPBASE
+	void InputCreateSeparateRagdoll( inputdata_t &inputdata );
+	void InputCreateSeparateRagdollClient( inputdata_t &inputdata );
+	void InputSetPoseParameter( inputdata_t &inputdata );
+#endif
 
 	// Dissolve, returns true if the ragdoll has been created
 	bool Dissolve( const char *pMaterialName, float flStartTime, bool bNPCOnly = true, int nDissolveType = 0, Vector vDissolverOrigin = vec3_origin, int iMagnitude = 0 );
@@ -309,11 +314,19 @@ public:
 	float				m_flLastEventCheck;	// cycle index of when events were last checked
 
 	virtual void SetLightingOriginRelative( CBaseEntity *pLightingOriginRelative );
+#ifdef MAPBASE
+	void SetLightingOriginRelative( string_t strLightingOriginRelative, inputdata_t *inputdata = NULL );
+#else
 	void SetLightingOriginRelative( string_t strLightingOriginRelative );
+#endif
 	CBaseEntity *GetLightingOriginRelative();
 
 	virtual void SetLightingOrigin( CBaseEntity *pLightingOrigin );
+#ifdef MAPBASE
+	void SetLightingOrigin( string_t strLightingOrigin, inputdata_t *inputdata = NULL );
+#else
 	void SetLightingOrigin( string_t strLightingOrigin );
+#endif
 	CBaseEntity *GetLightingOrigin();
 
 	const float* GetPoseParameterArray() { return m_flPoseParameter.Base(); }
@@ -340,6 +353,12 @@ private:
 	void InputSetLightingOriginRelative( inputdata_t &inputdata );
 	void InputSetLightingOrigin( inputdata_t &inputdata );
 	void InputSetModelScale( inputdata_t &inputdata );
+#ifdef MAPBASE
+	void InputSetModel( inputdata_t &inputdata );
+
+	void InputSetCycle( inputdata_t &inputdata );
+	void InputSetPlaybackRate( inputdata_t &inputdata );
+#endif
 
 	bool CanSkipAnimation( void );
 
@@ -416,6 +435,9 @@ protected:
 
 public:
 	COutputEvent m_OnIgnite;
+#ifdef MAPBASE
+	COutputEHANDLE m_OnServerRagdoll;
+#endif
 
 private:
 	CStudioHdr			*m_pStudioHdr;

@@ -170,6 +170,22 @@ void AI_CriteriaSet::Describe()
 	}
 }
 
+#ifdef MAPBASE
+//-----------------------------------------------------------------------------
+// Purpose: Merges another AI_CriteriaSet without clearing
+// Input  : src - 
+//-----------------------------------------------------------------------------
+void AI_CriteriaSet::MergeSet( const AI_CriteriaSet& src )
+{
+	for ( short i = src.m_Lookup.FirstInorder(); 
+		i != src.m_Lookup.InvalidIndex(); 
+		i = src.m_Lookup.NextInorder( i ) )
+	{
+		m_Lookup.Insert( src.m_Lookup[ i ] );
+	}
+}
+#endif
+
 BEGIN_SIMPLE_DATADESC( AI_ResponseParams )
 	DEFINE_FIELD( flags,	FIELD_SHORT ),
 	DEFINE_FIELD( odds,	FIELD_SHORT ),	
